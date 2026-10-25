@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d24">
+<title>Natasha Audition Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --night: #0b0d24;
+    --night-2: #17113a;
+    --velvet: #8e1b2e;
+    --velvet-deep: #5c0f1d;
+    --velvet-soft: #d0566a;
+    --gold: #e8c26a;
+    --gold-soft: #f6e3a8;
+    --ink: #f5efe4;
+    --ink-dim: #b9b0c9;
+    --card: rgba(16, 13, 38, 0.86);
+    --line: rgba(232, 194, 106, 0.18);
+    --radius: 18px;
+    --gutter: 16px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; color: var(--ink);
+    font: 16px/1.6 'Sarabun', system-ui, sans-serif;
+    background: radial-gradient(ellipse at 50% 0%, #2a1236 0%, var(--night-2) 45%, var(--night) 85%) fixed;
+    min-height: 100vh; overflow-x: hidden;
+  }
+  #sky { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; opacity: 0; transition: opacity 1.5s; }
+  body.sky-ready #sky { opacity: .55; }
+  body.no-webgl #sky { display: none; }
+  h1, h2, h3 { font-family: 'Playfair Display', Georgia, serif; line-height: 1.15; margin: 0 0 10px; }
+  button { font: inherit; }
+
+  /* ---------- Stage / hero ---------- */
+  .stage { position: relative; z-index: 1; overflow: hidden; min-height: 74vh; display: grid; place-items: center;
+           text-align: center; padding: 70px var(--gutter) 40px; }
+  .stage::before { /* spotlight */
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse 55% 70% at 50% 18%, rgba(255, 236, 190, .16), transparent 70%); }
+  .stage::after { /* stage floor edge */
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 10px;
+    background: linear-gradient(90deg, transparent, var(--gold) 20%, var(--gold) 80%, transparent); opacity: .35; }
+  .valance { position: absolute; top: 0; left: 0; right: 0; height: 46px; z-index: 3;
+    background: linear-gradient(180deg, var(--velvet-deep), var(--velvet));
+    border-bottom: 3px solid var(--gold);
+    box-shadow: 0 6px 18px rgba(0,0,0,.5); }
+  .valance::after { content: ''; position: absolute; left: 0; right: 0; bottom: -12px; height: 12px;
+    background: radial-gradient(circle at 10px 0, var(--gold) 0 5px, transparent 6px) 0 0 / 20px 12px repeat-x; }
+  .curtain { position: absolute; top: 0; bottom: 0; width: 51%; z-index: 2;
+    background: repeating-linear-gradient(90deg, var(--velvet-deep) 0 10px, var(--velvet) 10px 26px, #6d1222 26px 36px);
+    transition: transform 1.8s cubic-bezier(.75, 0, .2, 1); }
+  .curtain.left { left: 0; box-shadow: inset -24px 0 40px rgba(0,0,0,.55); }
+  .curtain.right { right: 0; box-shadow: inset 24px 0 40px rgba(0,0,0,.55); }
+  body.curtain-open .curtain.left { transform: translateX(-88%); }
+  body.curtain-open .curtain.right { transform: translateX(88%); }
+  .stage-inner { position: relative; z-index: 1; max-width: 620px; }
+  .eyebrow { color: var(--gold); letter-spacing: .32em; font-size: .72rem; text-transform: uppercase; }
+  .stage h1 { font-size: clamp(1.9rem, 8.5vw, 3.2rem); font-weight: 800; margin: 10px 0 22px; }
+  .stage h1 em { color: var(--velvet-soft); font-style: italic; }
+  .marquee { display: inline-grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 14px 12px;
+    border: 3px dotted var(--gold); border-radius: 16px; background: rgba(10, 8, 26, .7);
+    box-shadow: 0 0 24px rgba(232, 194, 106, .25), inset 0 0 18px rgba(232, 194, 106, .12); }
+  .marquee div { min-width: 62px; }
+  .marquee b { display: block; font: 800 clamp(1.8rem, 9vw, 2.6rem)/1 'Playfair Display', serif; color: var(--gold-soft);
+    font-variant-numeric: tabular-nums; }
+  .marquee span { font-size: .72rem; color: var(--ink-dim); }
+  .stage .status { margin-top: 14px; color: var(--ink-dim); font-size: .95rem; }
+
+  /* ---------- Panels ---------- */
+  main { position: relative; z-index: 1; max-width: 640px; margin: 0 auto;
+    padding: 24px max(var(--gutter), env(safe-area-inset-right)) calc(110px + env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left)); }
+  .panel { display: none; animation: rise .45s ease; }
+  .panel.active { display: block; }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .act { color: var(--gold); font: italic 600 .95rem 'Playfair Display', serif; margin-bottom: 2px; }
+  h2 { font-size: 1.55rem; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; }
+  .muted { color: var(--ink-dim); font-size: .92rem; }
+  .bar { height: 8px; border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden; margin: 12px 0 4px; }
+  .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--velvet-soft), var(--gold)); border-radius: inherit; transition: width .5s; }
+
+  /* timeline checks */
+  .check { display: grid; grid-template-columns: 54px 28px 1fr; gap: 10px; align-items: start; padding: 10px 0; cursor: pointer; }
+  .check + .check { border-top: 1px dashed rgba(255,255,255,.07); }
+  .check time { color: var(--gold); font-size: .82rem; padding-top: 3px; }
+  .check input { appearance: none; -webkit-appearance: none; width: 26px; height: 26px; margin: 0; cursor: pointer;
+    border: 2px solid var(--gold); border-radius: 50%; display: grid; place-items: center; transition: transform .2s; }
+  .check input:checked { background: var(--gold); transform: scale(1.08); }
+  .check input:checked::after { content: '★'; color: var(--night); font-size: 14px; }
+  .check input:checked ~ span { color: var(--ink-dim); text-decoration: line-through; text-decoration-color: rgba(232,194,106,.6); }
+  .check input:focus-visible { outline: 3px solid var(--gold-soft); outline-offset: 2px; }
+  .check.plain { grid-template-columns: 28px 1fr; }
+  .rest { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+
+  /* schedule list */
+  details.day { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 10px; }
+  details.day > summary { list-style: none; display: grid; grid-template-columns: 52px 1fr auto; gap: 12px; align-items: center;
+    padding: 12px 14px; cursor: pointer; min-height: 56px; }
+  details.day > summary::-webkit-details-marker { display: none; }
+  .date-chip { text-align: center; border-radius: 12px; background: rgba(255,255,255,.05); padding: 4px 0; line-height: 1.1; }
+  .date-chip b { display: block; font: 800 1.3rem 'Playfair Display', serif; color: var(--gold-soft); }
+  .date-chip small { color: var(--ink-dim); font-size: .72rem; }
+  .day-title { font-weight: 600; }
+  .day-meta { font-size: .8rem; color: var(--ink-dim); }
+  .day-count { font-size: .8rem; color: var(--gold); }
+  .day-count.full::before { content: '★ '; }
+  details.day .body { padding: 0 14px 14px; }
+  details.day.today { border-color: var(--gold); }
+  details.day.audition { background: linear-gradient(135deg, rgba(142,27,46,.6), var(--card)); }
+  details.day.past summary { opacity: .7; }
+
+  /* guide */
+  details.fold { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 10px; }
+  details.fold > summary { padding: 14px 16px; cursor: pointer; font-weight: 600; min-height: 50px; }
+  details.fold .body { padding: 0 16px 16px; }
+  .ex + .ex, .drill + .drill { margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,.08); }
+  .ex b, .drill b { color: var(--gold-soft); }
+  .amount { color: var(--velvet-soft); font-size: .9rem; }
+  ol, ul { padding-left: 1.3em; margin: 6px 0; }
+
+  /* awards */
+  .overall { display: flex; align-items: center; gap: 18px; }
+  .overall b { font: 800 1.6rem 'Playfair Display', serif; color: var(--gold-soft); display: block; }
+  .badges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .badge { text-align: center; padding: 14px 6px; border-radius: 16px; background: rgba(255,255,255,.04); border: 1px solid transparent; }
+  .badge .ic { font-size: 1.9rem; display: block; filter: grayscale(1) opacity(.35); }
+  .badge .nm { font-size: .8rem; font-weight: 600; display: block; margin-top: 4px; }
+  .badge .ds { font-size: .7rem; color: var(--ink-dim); }
+  .badge.on { border-color: var(--gold); background: radial-gradient(circle at 50% 30%, rgba(232,194,106,.18), rgba(255,255,255,.03)); }
+  .badge.on .ic { filter: none; animation: bob 2.4s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(-3px); } }
+
+  label.field { display: block; margin: 10px 0 4px; color: var(--ink-dim); font-size: .9rem; }
+  textarea, select, .sheet-url { width: 100%; font: inherit; color: var(--ink); background: rgba(0,0,0,.3);
+    border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+  textarea { min-height: 76px; resize: vertical; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .btn { min-height: 44px; padding: 0 18px; border-radius: 99px; border: 1px solid var(--gold);
+    background: transparent; color: var(--gold); cursor: pointer; font-weight: 600; }
+  .btn.solid { background: var(--gold); color: var(--night); }
+  a.btn { display: inline-flex; align-items: center; text-decoration: none; }
+  .btn[hidden] { display: none; }
+  .sheet-url { margin-bottom: 10px; }
+  .letter .actions { margin: 10px 0 6px; }
+  .letter-text { white-space: pre-wrap; font-size: 1.05rem; line-height: 1.7; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .motto { text-align: center; font: italic 600 1rem 'Playfair Display', 'Sarabun', serif; color: var(--ink-dim); margin: 26px 8px 0; }
+
+  /* ---------- Tab bar ---------- */
+  nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: grid; grid-template-columns: repeat(4, 1fr);
+    background: rgba(11, 9, 28, .92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid var(--line); padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); }
+  nav.tabs button { background: none; border: 0; color: var(--ink-dim); min-height: 54px; border-radius: 12px; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: .75rem; }
+  nav.tabs button .ic { font-size: 1.25rem; }
+  nav.tabs button[aria-selected="true"] { color: var(--gold); background: rgba(232,194,106,.1); }
+
+  /* ---------- Toast & banner ---------- */
+  #toast { position: fixed; left: 50%; bottom: calc(86px + env(safe-area-inset-bottom)); z-index: 20;
+    transform: translate(-50%, 30px); opacity: 0; pointer-events: none; transition: .4s;
+    background: linear-gradient(135deg, var(--velvet), #3a1240); border: 1px solid var(--gold); border-radius: 16px;
+    padding: 12px 18px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.5); width: max-content; max-width: calc(100% - 32px); }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+  #toast .ic { font-size: 1.8rem; display: block; }
+  #toast small { color: var(--gold-soft); letter-spacing: .15em; font-size: .68rem; }
+  #banner { display: none; margin-bottom: 12px; padding: 10px 14px; border-radius: 12px; background: var(--velvet); font-size: .9rem; }
+  #banner.show { display: block; }
+  footer { text-align: center; color: var(--ink-dim); font-size: .75rem; margin-top: 24px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .curtain, .panel, #toast, .bar i { transition: none; animation: none; }
+    .badge.on .ic { animation: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="sky" aria-hidden="true"></canvas>
+
+<header class="stage" id="hero">
+  <div class="valance" aria-hidden="true"></div>
+  <div class="curtain left" aria-hidden="true"></div>
+  <div class="curtain right" aria-hidden="true"></div>
+  <div class="stage-inner">
+    <div class="eyebrow">Audition · Natasha Rostova</div>
+    <h1>Natasha, Pierre <em>&amp;</em> The Great Comet of 1812</h1>
+    <div class="marquee" role="timer" aria-label="นับถอยหลังถึงออดิชั่น">
+      <div><b id="cd-d">0</b><span>วัน</span></div>
+      <div><b id="cd-h">00</b><span>ชั่วโมง</span></div>
+      <div><b id="cd-m">00</b><span>นาที</span></div>
+      <div><b id="cd-s">00</b><span>วินาที</span></div>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+</header>
+
+<main>
+  <div id="banner" role="status"></div>
+  <section class="panel active" id="p-today" role="tabpanel"></section>
+  <section class="panel" id="p-schedule" role="tabpanel"></section>
+  <section class="panel" id="p-guide" role="tabpanel"></section>
+  <section class="panel" id="p-awards" role="tabpanel"></section>
+  <footer>ไม่ใช่คำวินิจฉัยด้านสุขภาพหรือคำรับประกันผลออดิชั่น · ข้อมูลเก็บในเบราว์เซอร์เครื่องนี้เท่านั้น</footer>
+</main>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" data-tab="p-today" aria-selected="true"><span class="ic">🎭</span>วันนี้</button>
+  <button role="tab" data-tab="p-schedule" aria-selected="false"><span class="ic">📜</span>ตาราง</button>
+  <button role="tab" data-tab="p-guide" aria-selected="false"><span class="ic">🎼</span>คู่มือ</button>
+  <button role="tab" data-tab="p-awards" aria-selected="false"><span class="ic">🏆</span>รางวัล</button>
+</nav>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="data.js"></script>
+<script src="logic.js"></script>
+<script src="app.js"></script>
+<script src="comet.js"></script>
+</body>
+</html>
