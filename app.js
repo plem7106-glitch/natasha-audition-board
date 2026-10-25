@@ -53,6 +53,7 @@
 
   function save() {
     if (!canSave) return;
+    state.at = new Date().toISOString();
     try {
       localStorage.setItem(STORE_KEY, L.serializeState(state));
     } catch (e) {
@@ -106,6 +107,27 @@
     fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(L.sheetPayload(PLAN, state)) })
       .then(() => { setPref(SHEET_TIME_KEY, new Date().toISOString()); sheetStatus(lastPushText()); })
       .catch(() => sheetStatus('ส่งไป Google Sheet ไม่สำเร็จ — ตรวจอินเทอร์เน็ตหรือลิงก์'));
+  }
+
+  // On open, pull the copy other devices pushed; the newer side wins.
+  function syncFromSheet() {
+    const url = sheetUrl();
+    if (!url) return;
+    const bootAt = state.at;
+    sheetStatus('กำลังซิงก์กับ Google Sheet…');
+    fetch(url)
+      .then(r => r.text())
+      .then(txt => {
+        const r = L.parseState(txt);
+        if (state.at !== bootAt) return; // edited while loading; that save already pushes
+        const side = L.newerState(state, r.corrupt ? null : r.state);
+        if (side === 'remote' && canSave) {
+          localStorage.setItem(STORE_KEY, L.serializeState(r.state));
+          location.reload();
+        } else if (side === 'local') pushToSheet();
+        else sheetStatus(lastPushText());
+      })
+      .catch(() => sheetStatus('ซิงก์กับ Google Sheet ไม่สำเร็จ — ตรวจอินเทอร์เน็ต'));
   }
 
   // ---------- achievements ----------
@@ -431,7 +453,7 @@
 
   // ---------- boot ----------
   load();
-  queueSheetPush();
+  syncFromSheet();
   unlocked = L.achievements(PLAN, state);
   renderToday();
   renderSchedule();

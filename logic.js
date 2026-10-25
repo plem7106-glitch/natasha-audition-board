@@ -106,6 +106,7 @@
       if (isObj(data.mock)) Object.assign(s.mock, data.mock);
       const lt = data.letter;
       if (isObj(lt) && typeof lt.text === 'string' && lt.text.trim()) s.letter = { text: lt.text, at: String(lt.at || '') };
+      if (typeof data.at === 'string') s.at = data.at;
       return { state: s, corrupt: false };
     } catch (e) {
       return { state: emptyState(), corrupt: true };
@@ -125,10 +126,16 @@
     });
     const m = state.mock;
     const letter = state.letter ? [state.letter.text, state.letter.at] : ['', ''];
-    return { days, mock: [m.sincere, m.overcontrolled, m.change], letter };
+    return { days, mock: [m.sincere, m.overcontrolled, m.change], letter, state: serializeState(state) };
   }
 
-  const api = { toDateKey, dayStatus, daysUntil, countdown, focusDate, itemsForDay, allItemIds, progress, dayComplete, achievements, emptyState, parseState, serializeState, sheetPayload };
+  // Last edit wins across devices: 'remote' to adopt the sheet copy, 'local' to push ours, 'same' otherwise.
+  function newerState(local, remote) {
+    const a = local.at || '', b = (remote && remote.at) || '';
+    return b > a ? 'remote' : a > b ? 'local' : 'same';
+  }
+
+  const api = { toDateKey, dayStatus, daysUntil, countdown, focusDate, itemsForDay, allItemIds, progress, dayComplete, achievements, emptyState, parseState, serializeState, sheetPayload, newerState };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.Logic = api;
 })(typeof window !== 'undefined' ? window : globalThis);
